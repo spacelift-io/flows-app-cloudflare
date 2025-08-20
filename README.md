@@ -1,327 +1,101 @@
-# Flows App Template (Core)
-
-A template repository for creating new core Flows apps with best practices and CI/CD built-in.
-
-## Quick Start
-
-1. **Use this template** - Click "Use this template" button to create a new repository
-2. **Run setup** - `npm run setup` to customize placeholders automatically
-3. **Implement your logic** - Add blocks and customize configuration
-4. **Set up CI/CD** - Configure branch protection and deployment
-5. **Release** - Tag and release your app
-
-## Template Structure
-
-```text
-├── .github/workflows/ci.yml  # CI/CD pipeline
-├── .gitignore                # Git ignore rules
-├── package.json              # Dependencies and scripts
-├── tsconfig.json             # TypeScript configuration
-├── main.ts                   # App definition
-├── types.ts                  # Type definitions
-├── blocks/                   # Block implementations
-│   ├── index.ts              # Block registry and exports
-│   └── exampleBlock.ts       # Example block implementation
-├── setup.sh                  # Automated setup script
-└── README.md                 # This file
-```
-
-## Customization Guide
-
-### 1. Replace Placeholders
-
-Find and replace these placeholders throughout the codebase:
-
-- `{{APP_NAME}}` - Your app name (e.g., "Slack Integration")
-- `{{APP_DESCRIPTION}}` - Brief description of your app
-
-**Files to update:**
-
-- `package.json` - name and description fields
-- `main.ts` - app name and description
-- `types.ts` - JSDoc comments
-- `README.md` - update this file
-
-### 2. Customize Configuration
-
-In `main.ts`, modify the `config` object:
-
-```typescript
-config: {
-  type: "object",
-  properties: {
-    apiKey: {
-      type: "string",
-      title: "API Key",
-      description: "Your service API key",
-      secret: true  // This makes it a password field
-    },
-    baseUrl: {
-      type: "string",
-      title: "Base URL",
-      description: "API base URL",
-      default: "https://api.example.com"
-    }
-  },
-  required: ["apiKey"]  // Required fields
-}
-```
-
-### 3. Implement Your Blocks
-
-The template includes a clean block structure. Blocks are organized in the `blocks/` directory:
-
-#### Adding a New Block
-
-1. **Create the block file** (e.g., `blocks/myNewBlock.ts`):
-
-```typescript
-import { AppBlock, EventInput } from "@slflows/sdk";
-
-export const myNewBlock: AppBlock = {
-  name: "Your Action Name",
-  description: "What your block does",
-  category: "Your Category",
-
-  inputs: {
-    default: {
-      name: "Input Name",
-      description: "What users need to provide",
-      config: {
-        // Define your input schema here
-        type: "object",
-        properties: {
-          message: {
-            type: "string",
-            title: "Message",
-            description: "Input description",
-          },
-        },
-        required: ["message"],
-      },
-      onEvent: async (input: EventInput, { events }) => {
-        // Your logic here
-        const message = input.params.message as string;
-        const apiKey = input.app.config.apiKey as string;
+# Cloudflare Flows App
 
-        // Call your external API, process data, etc.
+Automate your Cloudflare infrastructure operations with 40+ pre-built blocks for DevOps teams.
 
-        // Just emit the result directly - don't wrap in success object
-        await events.emit({
-          result: "your result",
-        });
-      },
-    },
-  },
-
-  outputs: {
-    default: {
-      name: "Output Name",
-      description: "What your block returns",
-      default: true,
-      type: {
-        // Define your output schema here
-        type: "object",
-        properties: {
-          result: { type: "string" },
-        },
-        required: ["result"],
-      } as any,
-    },
-  },
-};
-```
+## Overview
 
-2. **Register the block** in `blocks/index.ts`:
+This Flows app provides comprehensive automation capabilities for Cloudflare services, enabling DevOps engineers and infrastructure teams to build automated workflows for common operational tasks.
 
-```typescript
-import { myNewBlock } from "./myNewBlock.ts";
+**Perfect for:**
 
-export const blocks = {
-  example: exampleBlock,
-  myNew: myNewBlock, // Add your block here
-} as const;
+- Infrastructure automation and GitOps workflows
+- Incident response and automated remediation
+- Performance optimization and cache management
+- Security policy enforcement
+- Compliance and monitoring automation
 
-export { myNewBlock }; // Export for external use
-```
+## Capabilities
 
-That's it! The block will automatically be included in your app since `main.ts` uses `blocks` directly as an object.
+### 🔄 Cache Management
 
-## Development
+- Purge cache selectively or globally
+- Create and manage cache rules
+- Configure cache TTL and browser caching
+- Toggle development mode
+- Set up cache reserve and always online
 
-### Prerequisites
+### 🌐 DNS & Traffic
 
-- Node.js 20+
-- npm
+- Update DNS records programmatically
+- Toggle proxy status for records
+- Configure load balancer pools
+- Set up traffic steering policies
+- Configure health checks
 
-### Setup
+### 🛡️ Security & Firewall
 
-```bash
-npm install
-npm run setup        # Interactive setup to customize template
-```
+- Create and update firewall rules
+- Configure rate limiting policies
+- Manage WAF custom rules
+- Toggle "Under Attack" mode
+- Set up Zero Trust access policies
 
-### Available Scripts
+### 📊 SSL/TLS Management
 
-```bash
-npm run setup        # Customize template placeholders
-npm run typecheck    # Type checking
-npm run format       # Code formatting
-npm run bundle       # Create deployment bundle
-```
+- Upload custom certificates
+- Create origin certificates
+- Update TLS versions
+- Manage SSL settings
 
-### Testing Your App
+### 📈 Analytics & Monitoring
 
-1. Run type checking: `npm run typecheck`
-2. Format code: `npm run format`
-3. Create bundle: `npm run bundle`
+- Retrieve zone analytics
+- Monitor security events
+- Check origin health status
+- Analyze rate limiting metrics
 
-**Note**: Initial `npm run typecheck` will show SDK import errors until you customize the template. This is expected - the SDK will be available when the app runs in the Flows environment.
+### 🔀 Rules & Redirects
 
-## CI/CD Pipeline
+- Create page rules
+- Set up redirect rules
+- Configure URL forwarding
 
-The template includes a complete CI/CD pipeline in `.github/workflows/ci.yml`:
+### 🤖 AI-Powered Search (AutoRAG)
 
-### Continuous Integration
+- Search Cloudflare documentation
+- AI-powered troubleshooting assistance
+- Sync and query operational data
 
-- **Triggers**: All branch pushes (except main)
-- **Steps**: Type check, format validation, bundling
-- **Quality Gates**: Must pass all checks to merge
+## Installation
 
-### Automated Releases
+1. **Get your Cloudflare credentials:**
+   - Create an API token in Cloudflare dashboard
+   - Find your Account ID in the URL: `https://dash.cloudflare.com/{account-id}/`
 
-- **Triggers**: Semver tags (v1.0.0, v2.1.3, etc.)
-- **Process**:
-  1. Runs full CI validation
-  2. Creates GitHub release with bundle
-  3. Updates version registry (`versions.json`)
-  4. Pushes registry to main branch
+2. **Install the app:**
+   - Add your API token
+   - Add your Account ID
+   - Confirm installation
 
-### Version Registry
+3. **Start automating:**
+   - Use blocks in your flows for operational tasks
+   - Build automated incident response workflows
+   - Create performance optimization pipelines
 
-The pipeline automatically maintains a `versions.json` file:
+## Use Cases
 
-```json
-{
-  "versions": [
-    {
-      "version": "1.0.0",
-      "artifactUrl": "https://github.com/user/repo/releases/download/v1.0.0/bundle.tar.gz",
-      "artifactChecksum": "sha256:abc123..."
-    }
-  ]
-}
-```
+- **Automated Incident Response**: Automatically enable "Under Attack" mode when security events are detected
+- **Performance Optimization**: Purge cache and update rules based on deployment triggers
+- **Infrastructure as Code**: Manage DNS, SSL, and security policies through automated workflows
+- **Compliance Monitoring**: Regular security policy audits and automated remediation
+- **Load Balancing**: Dynamic traffic steering based on health checks and performance metrics
 
-## Repository Setup
+## Requirements
 
-### 1. Branch Protection (Recommended)
-
-Configure branch protection for `main`:
-
-- Require pull request reviews
-- Require status checks (CI)
-- Allow GitHub Actions bot to bypass (for version registry updates)
-
-### 2. Repository Settings
-
-- Enable "Template repository" if this will be reused
-- Configure secrets if needed for external services
-- Set up branch protection rules
-
-## Deployment
-
-### Creating Releases
-
-1. **Ensure main is clean**: All changes merged and CI passing
-2. **Create and push tag**:
-
-   ```bash
-   git tag v1.0.0
-   git push origin v1.0.0
-   ```
-
-3. **Automated process**: CI creates release and updates registry
-4. **Verify**: Check GitHub releases and `versions.json` in main
-
-### Versioning
-
-Follow [Semantic Versioning](https://semver.org/):
-
-- `v1.0.0` - Major release (breaking changes)
-- `v1.1.0` - Minor release (new features)
-- `v1.0.1` - Patch release (bug fixes)
-
-## Best Practices
-
-### Code Organization
-
-- Keep `main.ts` focused on app definition
-- Use `types.ts` for all TypeScript definitions
-- Document your blocks and configuration clearly
-
-### Error Handling
-
-- Let errors bubble up naturally - don't catch and wrap them
-- Use descriptive error messages
-- The framework will handle error catching and reporting
-
-### Security
-
-- Mark sensitive config fields as `secret: true`
-- Never log API keys or sensitive data
-- Validate all inputs
-
-### Testing
-
-- Test your blocks manually before releasing
-- Verify configuration schema works as expected
-- Test the complete deployment pipeline
-
-## Troubleshooting
-
-### Common Issues
-
-**CI fails on format check**
-
-```bash
-npm run format
-git add .
-git commit -m "Fix formatting"
-```
-
-**Bundle creation fails**
-
-- Check TypeScript errors: `npm run typecheck`
-- Verify all imports are correct
-- Ensure `main.ts` exports default app
-
-**Release creation fails**
-
-- Verify branch protection allows GitHub Actions bot
-- Check repository permissions
-- Ensure tag follows semver format (v1.0.0)
-
-**Version registry not updating**
-
-- Check GitHub Actions bot has push access to main
-- Verify workflow permissions in repository settings
-- Check for conflicts in versions.json
-
-## Template Checklist
-
-When creating a new app from this template:
-
-- [ ] Run `npm install && npm run setup` for automated setup
-- [ ] Customize app configuration schema in `main.ts`
-- [ ] Implement your block logic in `blocks/`
-- [ ] Update block names, descriptions, and categories
-- [ ] Define proper input/output schemas
-- [ ] Test locally with `npm run typecheck` and `npm run bundle`
-- [ ] Update this README with app-specific information
-- [ ] Set up repository branch protection
-- [ ] Create first release with `git tag v1.0.0`
+- Cloudflare account with appropriate permissions
+- API token with necessary scopes for the services you want to automate
+- Flows platform access
 
 ---
 
-**Template Version**: 1.0.0
+_This app integrates with Cloudflare's REST API to provide reliable, scalable automation for your infrastructure operations._
