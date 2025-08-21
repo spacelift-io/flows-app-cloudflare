@@ -22,25 +22,37 @@ export const search: AppBlock = {
           type: "string",
           required: true,
         },
-        max_results: {
-          name: "Max Results",
-          description:
-            "Maximum number of search results to return (default: 10)",
-          type: "number",
-          required: false,
-        },
-        metadata_filters: {
-          name: "Metadata Filters",
-          description: "Filters to apply based on metadata (JSON object)",
+        filters: {
+          name: "Filters",
+          description: "Filters to apply to search results",
           type: {
             type: "object",
           },
           required: false,
         },
-        similarity_threshold: {
-          name: "Similarity Threshold",
-          description: "Minimum similarity score for results (0.0-1.0)",
+        max_num_results: {
+          name: "Max Results",
+          description:
+            "Maximum number of search results to return (1-50, default: 10)",
           type: "number",
+          required: false,
+        },
+        ranking_options: {
+          name: "Ranking Options",
+          description: "Configure ranking and scoring options",
+          type: {
+            type: "object",
+            properties: {
+              ranker: { type: "string" },
+              score_threshold: { type: "number" },
+            },
+          },
+          required: false,
+        },
+        rewrite_query: {
+          name: "Rewrite Query",
+          description: "Whether to use query rewriting for better results",
+          type: "boolean",
           required: false,
         },
       },
@@ -48,9 +60,10 @@ export const search: AppBlock = {
         const {
           rag_id,
           query,
-          max_results,
-          metadata_filters,
-          similarity_threshold,
+          filters,
+          max_num_results,
+          ranking_options,
+          rewrite_query,
         } = input.event.inputConfig;
 
         const client = new Cloudflare({
@@ -64,34 +77,39 @@ export const search: AppBlock = {
           query: query,
         };
 
-        if (max_results) {
-          requestBody.max_results = max_results;
+        if (filters) {
+          requestBody.filters = filters;
         }
 
-        if (metadata_filters) {
-          requestBody.metadata_filters = metadata_filters;
+        if (max_num_results) {
+          requestBody.max_num_results = max_num_results;
         }
 
-        if (similarity_threshold !== undefined) {
-          requestBody.similarity_threshold = similarity_threshold;
+        if (ranking_options) {
+          requestBody.ranking_options = ranking_options;
+        }
+
+        if (rewrite_query !== undefined) {
+          requestBody.rewrite_query = rewrite_query;
         }
 
         try {
           // Make raw HTTP request using client's internal request method
-          const response = await (client as any)._client.post(
+          const response = (await client.post(
             `/accounts/${account_id}/autorag/rags/${rag_id}/search`,
             {
               body: requestBody,
             },
-          );
+          )) as any;
+
+          const { result } = response;
 
           await events.emit({
-            search_query: response.search_query,
-            data: response.data,
-            has_more: response.has_more,
-            total_count: response.total_count,
-            metadata: response.metadata,
-            timestamp: new Date().toISOString(),
+            search_query: result.search_query,
+            data: result.data,
+            has_more: result.has_more,
+            next_page: result.next_page,
+            object: result.object,
           });
         } catch (error: any) {
           throw new Error(`AutoRAG search failed: ${error.message}`);
@@ -113,17 +131,26 @@ export const search: AppBlock = {
             items: {
               type: "object",
               properties: {
-                content: { type: "string" },
-                metadata: { type: "object" },
                 score: { type: "number" },
-                source: { type: "string" },
+                attributes: { type: "object" },
+                content: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      text: { type: "string" },
+                      type: { type: "string" },
+                    },
+                  },
+                },
+                file_id: { type: "string" },
+                filename: { type: "string" },
               },
             },
           },
           has_more: { type: "boolean" },
-          total_count: { type: "number" },
-          metadata: { type: "object" },
-          timestamp: { type: "string" },
+          next_page: { type: "string" },
+          object: { type: "string" },
         },
       },
     },

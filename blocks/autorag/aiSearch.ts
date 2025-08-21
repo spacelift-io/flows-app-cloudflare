@@ -22,19 +22,49 @@ export const aiSearch: AppBlock = {
           type: "string",
           required: true,
         },
-        max_results: {
-          name: "Max Results",
-          description:
-            "Maximum number of search results to return (default: 10)",
-          type: "number",
-          required: false,
-        },
-        metadata_filters: {
-          name: "Metadata Filters",
-          description: "Filters to apply based on metadata (JSON object)",
+        filters: {
+          name: "Filters",
+          description: "Filters to apply to search results",
           type: {
             type: "object",
           },
+          required: false,
+        },
+        max_num_results: {
+          name: "Max Results",
+          description:
+            "Maximum number of search results to return (1-50, default: 50)",
+          type: "number",
+          required: false,
+        },
+        model: {
+          name: "Model",
+          description: "AI model to use for generating responses",
+          type: "string",
+          required: false,
+        },
+        ranking_options: {
+          name: "Ranking Options",
+          description: "Configure ranking and scoring options",
+          type: {
+            type: "object",
+            properties: {
+              ranker: { type: "string" },
+              score_threshold: { type: "number" },
+            },
+          },
+          required: false,
+        },
+        rewrite_query: {
+          name: "Rewrite Query",
+          description: "Whether to use query rewriting for better results",
+          type: "boolean",
+          required: false,
+        },
+        stream: {
+          name: "Stream",
+          description: "Whether to stream the response",
+          type: "boolean",
           required: false,
         },
         system_prompt: {
@@ -43,28 +73,18 @@ export const aiSearch: AppBlock = {
           type: "string",
           required: false,
         },
-        temperature: {
-          name: "Temperature",
-          description: "Controls randomness in AI responses (0.0-2.0)",
-          type: "number",
-          required: false,
-        },
-        max_tokens: {
-          name: "Max Tokens",
-          description: "Maximum tokens in the AI response",
-          type: "number",
-          required: false,
-        },
       },
       onEvent: async (input) => {
         const {
           rag_id,
           query,
-          max_results,
-          metadata_filters,
+          filters,
+          max_num_results,
+          model,
+          ranking_options,
+          rewrite_query,
+          stream,
           system_prompt,
-          temperature,
-          max_tokens,
         } = input.event.inputConfig;
 
         const client = new Cloudflare({
@@ -78,42 +98,50 @@ export const aiSearch: AppBlock = {
           query: query,
         };
 
-        if (max_results) {
-          requestBody.max_results = max_results;
+        if (filters) {
+          requestBody.filters = filters;
         }
 
-        if (metadata_filters) {
-          requestBody.metadata_filters = metadata_filters;
+        if (max_num_results) {
+          requestBody.max_num_results = max_num_results;
+        }
+
+        if (model) {
+          requestBody.model = model;
+        }
+
+        if (ranking_options) {
+          requestBody.ranking_options = ranking_options;
+        }
+
+        if (rewrite_query !== undefined) {
+          requestBody.rewrite_query = rewrite_query;
+        }
+
+        if (stream !== undefined) {
+          requestBody.stream = stream;
         }
 
         if (system_prompt) {
           requestBody.system_prompt = system_prompt;
         }
 
-        if (temperature !== undefined) {
-          requestBody.temperature = temperature;
-        }
-
-        if (max_tokens) {
-          requestBody.max_tokens = max_tokens;
-        }
-
         try {
           // Make raw HTTP request using client's internal request method
-          const response = await (client as any)._client.post(
+          const { result } = (await client.post(
             `/accounts/${account_id}/autorag/rags/${rag_id}/ai-search`,
             {
               body: requestBody,
             },
-          );
+          )) as any;
 
           await events.emit({
-            response: response.response,
-            search_query: response.search_query,
-            data: response.data,
-            metadata: response.metadata,
-            usage: response.usage,
-            timestamp: new Date().toISOString(),
+            response: result.response,
+            search_query: result.search_query,
+            data: result.data,
+            has_more: result.has_more,
+            next_page: result.next_page,
+            object: result.object,
           });
         } catch (error: any) {
           throw new Error(`AutoRAG AI search failed: ${error.message}`);
@@ -136,22 +164,26 @@ export const aiSearch: AppBlock = {
             items: {
               type: "object",
               properties: {
-                content: { type: "string" },
-                metadata: { type: "object" },
                 score: { type: "number" },
+                attributes: { type: "object" },
+                content: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      text: { type: "string" },
+                      type: { type: "string" },
+                    },
+                  },
+                },
+                file_id: { type: "string" },
+                filename: { type: "string" },
               },
             },
           },
-          metadata: { type: "object" },
-          usage: {
-            type: "object",
-            properties: {
-              prompt_tokens: { type: "number" },
-              completion_tokens: { type: "number" },
-              total_tokens: { type: "number" },
-            },
-          },
-          timestamp: { type: "string" },
+          has_more: { type: "boolean" },
+          next_page: { type: "string" },
+          object: { type: "string" },
         },
       },
     },
